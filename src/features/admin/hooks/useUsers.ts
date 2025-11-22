@@ -73,6 +73,18 @@ export function useDeleteGlobalAdmin() {
     })
 }
 
+export function useToggleGlobalAdminActive() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => globalAdminService.toggleActive(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: userKeys.globalAdmins() })
+        },
+    })
+}
+
+
 /**
  * Operational Admins Hooks
  */
@@ -121,6 +133,18 @@ export function useDeleteOperationalAdmin() {
     })
 }
 
+export function useToggleOperationalAdminActive() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => operationalAdminService.toggleActive(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: userKeys.operationalAdmins() })
+        },
+    })
+}
+
+
 /**
  * Washers Hooks
  */
@@ -165,6 +189,17 @@ export function useDeleteWasher() {
 
     return useMutation({
         mutationFn: (id: number) => washerService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: userKeys.washers() })
+        },
+    })
+}
+
+export function useToggleWasherActive() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: number) => washerService.toggleActive(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: userKeys.washers() })
         },

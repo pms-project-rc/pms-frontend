@@ -61,6 +61,14 @@ export const globalAdminService = {
         const response = await api.delete<{ message: string }>(`${USERS_BASE}/global-admins/${id}`)
         return response.data
     },
+
+    /**
+     * Toggle active status of a global admin
+     */
+    async toggleActive(id: number) {
+        const response = await api.patch<GlobalAdmin>(`${USERS_BASE}/global-admins/${id}/toggle-active`)
+        return response.data
+    },
 }
 
 /**
@@ -98,6 +106,16 @@ export const operationalAdminService = {
         )
         return response.data
     },
+
+    /**
+     * Toggle active status of an operational admin
+     */
+    async toggleActive(id: number) {
+        const response = await api.patch<OperationalAdmin>(
+            `${USERS_BASE}/operational-admins/${id}/toggle-active`
+        )
+        return response.data
+    },
 }
 
 /**
@@ -132,6 +150,14 @@ export const washerService = {
 
     async delete(id: number) {
         const response = await api.delete<{ message: string }>(`${USERS_BASE}/washers/${id}`)
+        return response.data
+    },
+
+    /**
+     * Toggle active status of a washer
+     */
+    async toggleActive(id: number) {
+        const response = await api.patch<Washer>(`${USERS_BASE}/washers/${id}/toggle-active`)
         return response.data
     },
 }
