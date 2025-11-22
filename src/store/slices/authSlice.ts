@@ -1,26 +1,32 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import { authService } from '@/features/auth/services/authService'
+import type { AuthState, LoginCredentials, User } from '@/features/auth/types/auth.types'
 
-interface User {
-  id: number
-  email: string
-  name: string
-  role: 'global_admin' | 'operational_admin' | 'washer'
-}
+// Async Thunks
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials: LoginCredentials, { rejectWithValue }) => {
+    try {
+      const response = await authService.login(credentials)
+      return response
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.detail || 'Error al iniciar sesión')
+    }
+  }
+)
 
-interface AuthState {
-  user: User | null
-  token: string | null
-  refreshToken: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  error: string | null
-}
+export const logout = createAsyncThunk('auth/logout', async () => {
+  authService.logout()
+})
+
+// Initial State
+const user = authService.getCurrentUser()
+const token = authService.getToken()
 
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  user: user,
+  token: token,
+  isAuthenticated: !!token,
   isLoading: false,
   error: null,
 }
@@ -29,38 +35,43 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (
-      state,
-      action: PayloadAction<{
-        user: User
-        token: string
-        refreshToken: string
-      }>
-    ) => {
-      state.user = action.payload.user
-      state.token = action.payload.token
-      state.refreshToken = action.payload.refreshToken
-      state.isAuthenticated = true
-      localStorage.setItem('token', action.payload.token)
-      localStorage.setItem('refreshToken', action.payload.refreshToken)
+    clearError: (state) => {
+      state.error = null
     },
-    logout: state => {
-      state.user = null
-      state.token = null
-      state.refreshToken = null
-      state.isAuthenticated = false
-      localStorage.removeItem('token')
-      localStorage.removeItem('refreshToken')
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Login
+      .addCase(login.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(login.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.isAuthenticated = true
+        state.token = action.payload.access_token
+        state.user = {
+          id: action.payload.user_id,
+          email: '', // Email is not returned in token response currently, but that's fine
+          full_name: action.payload.full_name,
+          role: action.payload.role as any
+        }
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.isLoading = false
+        state.isAuthenticated = false
+        state.user = null
+        state.token = null
+        state.error = action.payload as string
+      })
+      // Logout
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null
+        state.token = null
+        state.isAuthenticated = false
+      })
   },
 })
 
-export const { setCredentials, logout, setLoading, setError } =
-  authSlice.actions
+export const { clearError } = authSlice.actions
 export default authSlice.reducer
