@@ -2,9 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 interface User {
   id: number
-  email: string
-  name: string
+  username: string
   role: 'global_admin' | 'operational_admin' | 'washer'
+  active: boolean
 }
 
 interface AuthState {
@@ -18,9 +18,9 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('token'),
-  refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: localStorage.getItem('pms_access_token'),
+  refreshToken: null,
+  isAuthenticated: !!localStorage.getItem('pms_access_token'),
   isLoading: false,
   error: null,
 }
@@ -34,23 +34,19 @@ const authSlice = createSlice({
       action: PayloadAction<{
         user: User
         token: string
-        refreshToken: string
       }>
     ) => {
       state.user = action.payload.user
       state.token = action.payload.token
-      state.refreshToken = action.payload.refreshToken
       state.isAuthenticated = true
-      localStorage.setItem('token', action.payload.token)
-      localStorage.setItem('refreshToken', action.payload.refreshToken)
+      localStorage.setItem('pms_access_token', action.payload.token)
     },
     logout: state => {
       state.user = null
       state.token = null
       state.refreshToken = null
       state.isAuthenticated = false
-      localStorage.removeItem('token')
-      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('pms_access_token')
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
