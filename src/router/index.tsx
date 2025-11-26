@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks/useRedux'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 // Layouts
 import AuthLayout from '@/layouts/AuthLayout'
@@ -20,25 +21,31 @@ import OperationalDashboard from '@/pages/operational/DashboardPage'
 // Washer Pages (placeholder)
 import WasherDashboard from '@/pages/washer/DashboardPage'
 
-// Protected Route Component
-function ProtectedRoute({
-  children,
-  allowedRoles,
-}: {
-  children: React.ReactNode
-  allowedRoles: string[]
-}) {
+// Error Pages
+import UnauthorizedPage from '@/pages/UnauthorizedPage'
+
+// Smart redirect component based on user role
+function SmartRedirect() {
   const { user, isAuthenticated } = useAppSelector(state => state.auth)
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
-  if (user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />
+  if (user) {
+    switch (user.role) {
+      case 'global_admin':
+        return <Navigate to="/admin/dashboard" replace />
+      case 'operational_admin':
+        return <Navigate to="/operational/dashboard" replace />
+      case 'washer':
+        return <Navigate to="/washer/dashboard" replace />
+      default:
+        return <Navigate to="/login" replace />
+    }
   }
 
-  return <>{children}</>
+  return <Navigate to="/login" replace />
 }
 
 function Router() {
@@ -95,8 +102,12 @@ function Router() {
         {/* More routes will be added here */}
       </Route>
 
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* Error Routes */}
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* Root redirect - smart redirect based on user role */}
+      <Route path="/" element={<SmartRedirect />} />
 
       {/* 404 */}
       <Route path="*" element={<div>404 - Page Not Found</div>} />
