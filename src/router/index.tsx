@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAppSelector } from '@/hooks/useRedux'
 import ProtectedRoute from '@/components/ProtectedRoute'
-import RegisterPage from '@/pages/auth/RegisterPage';
-import AdminPricingConfig from '@/pages/admin/AdminPricingConfig.tsx'; 
+import AdminPricingConfig from '@/pages/admin/AdminPricingConfig.tsx';
 import ReportsExport from '@/pages/admin/ReportsExport.tsx';
+import EmployeesPage from '@/pages/admin/EmployeesPage';
 
 
 // Layouts
@@ -62,49 +62,51 @@ function Router() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
-     {/* Admin Routes */}
-    <Route
-    path="/admin/*"
-    element={
-        // Protege todas las rutas hijas para que solo los 'global_admin' puedan acceder
-        <ProtectedRoute allowedRoles={['global_admin']}>
+      {/* Admin Routes */}
+      <Route
+        path="/admin/*"
+        element={
+          // Protege todas las rutas hijas para que solo los 'global_admin' puedan acceder
+          <ProtectedRoute allowedRoles={['global_admin']}>
             {/* AdminLayout es el contenedor visual que incluye el sidebar y el header */}
             <AdminLayout />
-            
-        </ProtectedRoute>
-    }
->
-    {/* index: Si alguien va a /admin, es redirigido a /admin/dashboard */}
-    <Route index element={<Navigate to="/admin/dashboard" replace />} />
-    
-    {/* Dashboard Principal del Administrador */}
-    <Route path="dashboard" element={<AdminDashboard />} />
-    
-    {/* CONFIGURACIÓN DE TARIFAS  */}
-    <Route path="pricing" element={<AdminPricingConfig />} />
-    {/* export el report  */}
-    <Route path="export/report" element={<ReportsExport/>} />
-    
-    {/* More routes will be added here (Ej. /admin/users, /admin/reports) */}
-</Route>
-      {/* Operational Routes */}
-      <Route
-        path="/operational/*"
-        element={
-          <ProtectedRoute allowedRoles={['operational_admin']}>
-            <OperationalLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route
-          index
-          element={<Navigate to="/operational/dashboard" replace />}
-        />
-        <Route path="dashboard" element={<OperationalDashboard />} />
-        {/* 2 */}
-        <Route path="reception" element={<ReceptionPage />} /> 
 
-      </Route>
+          </ProtectedRoute>
+        }
+      >
+        {/* index: Si alguien va a /admin, es redirigido a /admin/dashboard */}
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+
+        {/* Dashboard Principal del Administrador */}
+        <Route path="dashboard" element={<AdminDashboard />} />
+
+        {/* CONFIGURACIÓN DE TARIFAS  */}
+        <Route path="pricing" element={<AdminPricingConfig />} />
+        {/* export el report  */}
+        <Route path="export/report" element={<ReportsExport />} />
+        {/* Empleados/Usuarios */}
+        <Route path="employees" element={<EmployeesPage />} />
+
+        {/* More routes will be added here (Ej. /admin/users, /admin/reports) */}
+      </Route>
+      {/* Operational Routes */}
+      <Route
+        path="/operational/*"
+        element={
+          <ProtectedRoute allowedRoles={['operational_admin']}>
+            <OperationalLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          index
+          element={<Navigate to="/operational/dashboard" replace />}
+        />
+        <Route path="dashboard" element={<OperationalDashboard />} />
+        {/* 2 */}
+        <Route path="reception" element={<ReceptionPage />} />
+
+      </Route>
 
       {/* Washer Routes */}
       <Route
@@ -120,10 +122,10 @@ function Router() {
         {/* More routes will be added here */}
       </Route>
 
-        <Route element={<AuthLayout />}>
+      <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
-       <Route path="/register" element={<RegisterPage />} /> 
-        </Route>
+
+      </Route>
 
 
 

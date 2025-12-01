@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAppSelector } from '@/hooks/useRedux';
 import { Eye, EyeOff } from 'lucide-react';
 
-import LogoImage from './asset/Logo.png'; 
+import LogoImage from './asset/Logo.png';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -62,7 +62,7 @@ function LoginPage() {
   return (
     // Asegurado el fondo con bg-gray-900 (el azul oscuro que deseas)
     <div className="flex h-screen w-screen bg-gray-900 flex-col md:flex-row">
-      
+
       {/* Columna de la Izquierda: Formulario de Login */}
       <div className="flex md:w-5/12 w-full justify-center md:justify-end items-center p-6 md:p-12">
         <div className="w-full max-w-md md:max-w-lg bg-white p-8 md:p-12 rounded-xl shadow-2xl border-2 border-yellow-400">
@@ -81,16 +81,16 @@ function LoginPage() {
               <label className="block text-base font-medium text-gray-900 mb-1">
                 Usuario
               </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              <input
+                type="text"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 disabled={isLoading}
               />
             </div>
-            
+
             <div>
               <label className="block text-base font-medium text-gray-900 mb-1">
                 Contraseña
@@ -132,27 +132,17 @@ function LoginPage() {
             >
               {isLoading ? 'Cargando...' : 'Entrar'}
             </button>
-            
+
             {/*
               CAMBIO CLAVE: Contenedor flexible para alinear ambos botones/enlaces:
               "¿Olvidaste tu contraseña?" y "Registrarse".
             */}
-            <div className="flex justify-between items-center pt-2 gap-2">
+            <div className="flex justify-center items-center pt-2">
               <a
                 href="/reset-password"
-                // Clases para el botón 'Olvidaste' con fondo blanco y borde/texto amarillo
-                className="flex-1 text-center px-4 py-2 text-sm font-semibold text-yellow-500 bg-white border border-yellow-500 rounded-lg hover:bg-yellow-50 transition duration-200"
+                className="text-center px-4 py-2 text-sm font-semibold text-yellow-500 hover:text-yellow-600 transition duration-200"
               >
                 ¿Olvidaste tu contraseña?
-              </a>
-              
-              {/* Nuevo Botón de Registrarse */}
-              <a
-                href="/register" // <- Ruta al nuevo componente RegisterPage
-                // Clases para el botón 'Registrarse': invertimos los colores para darle más prominencia
-                className="flex-1 text-center px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition duration-200"
-              >
-                Registrarse
               </a>
             </div>
           </form>
@@ -161,7 +151,7 @@ function LoginPage() {
 
       {/* Columna de la Derecha: Información de Seguridad y Logo */}
       <div className="flex md:w-7/12 w-full flex-col justify-center items-center text-white p-8 md:p-12">
-        
+
         {/*
           SECCIÓN DEL LOGO: Ahora usa la variable importada y no tiene fondo gris.
         */}
@@ -172,7 +162,7 @@ function LoginPage() {
             className="h-32 md:h-40 max-h-40 w-auto"
           />
         </div>
-        
+
         {/* Texto de Bienvenida */}
         <p className="text-lg text-center leading-relaxed max-w-sm">
           Seguridad, acceso rápido y control total de tu espacio.
@@ -181,7 +171,7 @@ function LoginPage() {
             ¡Gestiona fácil y seguro!
           </span>
         </p>
-        
+
         {/* Línea divisoria inferior */}
         <div className="w-16 h-1 bg-yellow-500 mt-4"></div>
       </div>
