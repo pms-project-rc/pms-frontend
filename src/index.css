@@ -4,30 +4,36 @@
 
 @layer base {
   :root {
+    /* Mantener variables de color claro si es necesario para Light Mode,
+       pero forzamos el modo oscuro por defecto en el body. */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
   }
 
   body {
-    @apply bg-white text-gray-900;
+    /* CAMBIO CLAVE: Usamos bg-gray-950 (negro muy oscuro) y texto blanco (text-gray-100) */
+    @apply bg-gray-950 text-gray-100;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer components {
+  /* Usaremos 'btn-primary' para el acento amarillo en la mayoría de las vistas */
   .btn-primary {
-    @apply bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors;
+    @apply bg-yellow-500 text-gray-900 px-4 py-2 rounded-xl font-semibold hover:bg-yellow-600 transition-colors shadow-lg;
   }
 
   .btn-secondary {
-    @apply bg-secondary-600 text-white px-4 py-2 rounded-md hover:bg-secondary-700 transition-colors;
+    @apply bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors;
   }
 
+  /* Actualizamos el campo de entrada para el tema oscuro */
   .input-field {
-    @apply border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply border border-gray-700 bg-gray-900 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors;
   }
 
+  /* Actualizamos el estilo de la tarjeta para el tema oscuro */
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 border border-gray-700;
   }
 }

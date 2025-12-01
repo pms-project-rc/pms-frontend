@@ -16,6 +16,34 @@ interface AuthState {
   error: string | null
 }
 
+// // const initialState: AuthState = {
+// //   user: {
+// //     id: 1,
+// //     username: "demo",
+// //     role: "global_admin", // prueba también "operational_admin" o "washer"
+// //     active: true,
+// //   },
+// //   token: "fake-token",
+// //   refreshToken: null,
+// //   isAuthenticated: true,
+// //   isLoading: false,
+// //   error: null,
+// // }
+// const initialState: AuthState = {
+//   user: {
+//     id: 3,
+//     username: "demo_washer",
+//     role: "washer",
+//     active: true,
+//   },
+//   token: "fake-token",
+//   refreshToken: null,
+//   isAuthenticated: true,
+//   isLoading: false,
+//   error: null,
+// }
+
+
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('pms_access_token'),
