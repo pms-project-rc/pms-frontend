@@ -1,22 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut } from 'lucide-react';
+import {
+  Menu,
+  User,
+  LogOut,
+  LayoutDashboard,
+  Car,
+  Droplet,
+  CreditCard,
+  Users,
+  FileText,
+  DollarSign,
+  BarChart
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface MenuItem {
   name: string;
   path: string;
+  icon: React.ComponentType<{ className?: string; size?: number }>;
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Dashboard', path: '/admin/dashboard' },
-  { name: 'Vehículos', path: '/admin/vehicles' },
-  { name: 'Lavados', path: '/admin/washes' },
-  { name: 'Mensualidades', path: '/admin/subscriptions' },
-  { name: 'Empleados', path: '/admin/employees' },
-  { name: 'Convenios', path: '/admin/agreements' },
-  { name: 'Gastos', path: '/admin/expenses' },
-  { name: 'Reportes', path: '/admin/reports' },
+  { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Vehículos', path: '/admin/vehicles', icon: Car },
+  { name: 'Lavados', path: '/admin/washes', icon: Droplet },
+  { name: 'Mensualidades', path: '/admin/subscriptions', icon: CreditCard },
+  { name: 'Empleados', path: '/admin/employees', icon: Users },
+  { name: 'Convenios', path: '/admin/agreements', icon: FileText },
+  { name: 'Gastos', path: '/admin/expenses', icon: DollarSign },
+  { name: 'Reportes', path: '/admin/reports', icon: BarChart },
 ];
 
 function AdminLayout() {
@@ -73,18 +86,22 @@ function AdminLayout() {
 
         {/* Menu Items */}
         <nav className="flex-1 py-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`w-full px-4 py-3 text-left transition-colors ${isActive(item.path)
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 ${isActive(item.path)
                   ? 'bg-yellow-500 text-gray-900 font-semibold'
                   : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
-            >
-              {sidebarOpen ? item.name : item.name.charAt(0)}
-            </button>
-          ))}
+                  }`}
+              >
+                <Icon size={20} className="flex-shrink-0" />
+                {sidebarOpen && <span>{item.name}</span>}
+              </button>
+            );
+          })}
         </nav>
       </aside>
 
