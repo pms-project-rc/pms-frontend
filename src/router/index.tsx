@@ -71,13 +71,21 @@ function Router() {
       <Route
         path="/admin/*"
         element={
-          // Protege todas las rutas hijas para que solo los 'global_admin' puedan acceder
           <ProtectedRoute allowedRoles={['global_admin']}>
-            {/* AdminDashboard es una aplicación completa y autónoma - no necesita AdminLayout */}
-            <AdminDashboard />
+            <AdminLayout />
           </ProtectedRoute>
         }
       >
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="vehicles" element={<VehiclesPage />} />
+        <Route path="washes" element={<WashesPage />} />
+        <Route path="subscriptions" element={<SubscriptionsPage />} />
+        <Route path="employees" element={<EmployeesPage />} />
+        <Route path="agreements" element={<AgreementsPage />} />
+        <Route path="expenses" element={<ExpensesPage />} />
+        <Route path="reports" element={<ReportsExport />} />
+        <Route path="pricing" element={<AdminPricingConfig />} />
       </Route>
       {/* Operational Routes */}
       <Route
