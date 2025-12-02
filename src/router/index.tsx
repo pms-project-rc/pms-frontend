@@ -68,26 +68,11 @@ function Router() {
         element={
           // Protege todas las rutas hijas para que solo los 'global_admin' puedan acceder
           <ProtectedRoute allowedRoles={['global_admin']}>
-            {/* AdminLayout es el contenedor visual que incluye el sidebar y el header */}
-            <AdminLayout />
-
+            {/* AdminDashboard es una aplicación completa y autónoma - no necesita AdminLayout */}
+            <AdminDashboard />
           </ProtectedRoute>
         }
       >
-        {/* index: Si alguien va a /admin, es redirigido a /admin/dashboard */}
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-
-        {/* Dashboard Principal del Administrador */}
-        <Route path="dashboard" element={<AdminDashboard />} />
-
-        {/* CONFIGURACIÓN DE TARIFAS  */}
-        <Route path="pricing" element={<AdminPricingConfig />} />
-        {/* export el report  */}
-        <Route path="export/report" element={<ReportsExport />} />
-        {/* Empleados/Usuarios */}
-        <Route path="employees" element={<EmployeesPage />} />
-
-        {/* More routes will be added here (Ej. /admin/users, /admin/reports) */}
       </Route>
       {/* Operational Routes */}
       <Route
