@@ -13,6 +13,34 @@
     @apply bg-gray-50 text-gray-900;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Estilos personalizados para scrollbar - Webkit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.4);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #0ea5e9 0%, #06b6d4 100%);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #0284c7 0%, #0891b2 100%);
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  }
+
+  /* Estilos para Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #0ea5e9 rgba(30, 41, 59, 0.4);
+  }
 }
 
 @layer components {
@@ -46,4 +74,14 @@
 /* Asegurar que los botones no hereden colores incorrectos */
 button {
   @apply transition-colors duration-200;
+}
+
+/* Ocultar scrollbar pero mantener scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

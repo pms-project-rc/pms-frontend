@@ -40,8 +40,21 @@ interface WashingServiceResponse {
 }
 
 class WashingServiceAPI {
+    private getToken(): string {
+        return localStorage.getItem('pms_access_token') || localStorage.getItem('access_token') || '';
+    }
+
+    private get authHeaders() {
+        return {
+            'Authorization': `Bearer ${this.getToken()}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
     async getActiveServices(): Promise<WashingService[]> {
-        const response = await axios.get<WashingServiceResponse[]>(`${API_URL}/washing/active`);
+        const response = await axios.get<WashingServiceResponse[]>(`${API_URL}/washing/active`, {
+            headers: this.authHeaders
+        });
         return response.data.map(item => {
             // Infer status based on available data
             // If status is 'PAID' or 'COMPLETED', it's completed.
@@ -71,6 +84,43 @@ class WashingServiceAPI {
         });
     }
 
+    // Obtener todos los servicios (incluyendo completados) - para reportes
+    async getAllServices(): Promise<WashingService[]> {
+        try {
+            // Por ahora, el backend solo tiene endpoint /active
+            // TODO: Backend debe implementar endpoint /services que retorne todos
+            const response = await axios.get(`${API_URL}/washing/active`, {
+                headers: this.authHeaders
+            });
+            const services = response.data.data || response.data || [];
+            
+            return services.map((item: WashingServiceResponse) => {
+                let status: 'pending' | 'in_progress' | 'completed' = 'pending';
+                if (item.status === 'completed' || item.status === 'paid') {
+                    status = 'completed';
+                } else if (item.washer_id) {
+                    status = 'in_progress';
+                }
+
+                return {
+                    id: item.id,
+                    vehicle_plate: item.plate,
+                    service_type: item.service_type,
+                    washer_id: item.washer_id,
+                    status,
+                    price: item.price,
+                    created_at: item.service_date,
+                    vehicle_type: 'Unknown',
+                    washer_name: item.washer_id ? `Washer #${item.washer_id}` : undefined
+                };
+            });
+        } catch (error) {
+            console.error('Error getting all washing services:', error);
+            // Si el endpoint no existe, retornar array vacío
+            return [];
+        }
+    }
+
     async createService(service: CreateWashingRequest): Promise<WashingService> {
         // Map request to backend expected format
         const payload = {
@@ -83,7 +133,9 @@ class WashingServiceAPI {
             owner_phone: service.owner_phone,
             notes: service.notes
         };
-        const response = await axios.post<WashingServiceResponse>(`${API_URL}/washing/`, payload);
+        const response = await axios.post<WashingServiceResponse>(`${API_URL}/washing/`, payload, {
+            headers: this.authHeaders
+        });
 
         // Map response back to WashingService
         return {
@@ -99,7 +151,11 @@ class WashingServiceAPI {
     }
 
     async assignWasher(serviceId: number, washerId: number): Promise<WashingService> {
-        const response = await axios.put<WashingServiceResponse>(`${API_URL}/washing/${serviceId}/assign/${washerId}`);
+        const response = await axios.put<WashingServiceResponse>(
+            `${API_URL}/washing/${serviceId}/assign/${washerId}`,
+            {},
+            { headers: this.authHeaders }
+        );
         return {
             id: response.data.id,
             vehicle_plate: response.data.plate,
@@ -112,7 +168,11 @@ class WashingServiceAPI {
     }
 
     async completeService(serviceId: number): Promise<WashingService> {
-        const response = await axios.put<WashingServiceResponse>(`${API_URL}/washing/${serviceId}/complete`);
+        const response = await axios.put<WashingServiceResponse>(
+            `${API_URL}/washing/${serviceId}/complete`,
+            {},
+            { headers: this.authHeaders }
+        );
         return {
             id: response.data.id,
             vehicle_plate: response.data.plate,

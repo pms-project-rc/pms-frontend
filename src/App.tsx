@@ -3,6 +3,7 @@ import { Provider } from 'react-redux'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { store } from '@/store'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AuthInitializer } from '@/components/AuthInitializer'
 import Router from '@/router'
 
 // Create QueryClient instance
@@ -20,11 +21,13 @@ function App() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
-            <Router />
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+          <AuthProvider>
+            <AuthInitializer>
+              <Router />
+            </AuthInitializer>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </Provider>
   )

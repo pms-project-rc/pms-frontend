@@ -27,21 +27,33 @@ import AdminDashboard from '@/pages/admin/DashboardPage'
 // Operational Pages (placeholder)
 import OperationalDashboard from '@/pages/operational/DashboardPage'
 import ReceptionPage from '@/pages/operational/ReceptionPage'
+import ParkingPage from '@/pages/operational/ParkingPage'
+import WashingPage from '@/pages/operational/WashingPage'
+import ReportsPage from '@/pages/operational/ReportsPage'
 
 // Washer Pages (placeholder)
 import WasherDashboard from '@/pages/washer/DashboardPage'
+import WasherHistory from '@/pages/washer/HistoryPage'
 
 // Error Pages
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 
 // Smart redirect component based on user role
 function SmartRedirect() {
-  const { user, isAuthenticated } = useAppSelector(state => state.auth)
+  const { user, isAuthenticated, token } = useAppSelector(state => state.auth)
 
-  if (!isAuthenticated) {
+  // If no token and not authenticated, go to login
+  if (!token && !isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
+  // If we have a token but user is null, something went wrong - go to login
+  if (token && !user) {
+    console.warn('Token exists but user is null - token decode may have failed')
+    return <Navigate to="/login" replace />
+  }
+
+  // If we have a user, redirect based on role
   if (user) {
     switch (user.role) {
       case 'global_admin':
@@ -101,6 +113,9 @@ function Router() {
           element={<Navigate to="/operational/dashboard" replace />}
         />
         <Route path="dashboard" element={<OperationalDashboard />} />
+        <Route path="parking" element={<ParkingPage />} />
+        <Route path="washing" element={<WashingPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         {/* 2 */}
         <Route path="reception" element={<ReceptionPage />} />
 
@@ -117,7 +132,7 @@ function Router() {
       >
         <Route index element={<Navigate to="/washer/dashboard" replace />} />
         <Route path="dashboard" element={<WasherDashboard />} />
-        {/* More routes will be added here */}
+        <Route path="history" element={<WasherHistory />} />
       </Route>
 
       <Route element={<AuthLayout />}>

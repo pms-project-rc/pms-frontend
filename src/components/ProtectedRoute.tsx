@@ -7,16 +7,24 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-    const { user, isAuthenticated } = useAppSelector(state => state.auth);
+    const { user, isAuthenticated, token } = useAppSelector(state => state.auth);
 
-    if (!isAuthenticated) {
+    // If not authenticated AND no token, redirect to login
+    if (!isAuthenticated && !token) {
         return <Navigate to="/login" replace />;
     }
 
+    // If we have a token but no user, it means decode failed - redirect to login
+    if (token && !user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    // If we have a user but they don't have the right role, redirect to unauthorized
     if (user && !allowedRoles.includes(user.role)) {
         return <Navigate to="/unauthorized" replace />;
     }
 
+    // Everything is good!
     return <>{children}</>;
 }
 

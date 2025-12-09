@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Plus, Search, Edit, Trash2, Eye, AlertCircle, Loader, Users } from 'lucide-react';
 import { employeeService, Employee, EmployeeCreateRequest } from '../../services/employeeService';
 import EmployeeModal from '../../components/EmployeeModal';
@@ -16,6 +17,9 @@ const EmployeesPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+    const [shiftStatus, setShiftStatus] = useState<Record<number, boolean | null>>({});
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
     // Cargar empleados al montar el componente
     useEffect(() => {
@@ -28,11 +32,39 @@ const EmployeesPage: React.FC = () => {
             setError(null);
             const data = await employeeService.getAllEmployees();
             setEmployees(data);
+            await fetchShiftStatuses(data);
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Error al cargar los empleados');
             console.error('Error loading employees:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchShiftStatuses = async (list: Employee[]) => {
+        try {
+            const entries = await Promise.all(
+                list.map(async (emp) => {
+                    try {
+                        const res = await axios.get(`${API_URL}/shifts/status`, {
+                            params: { admin_id: emp.id },
+                        });
+                        const statusValue = res.data?.status || res.data?.is_active || res.data?.active;
+                        const isActive = statusValue === true || statusValue === 'active';
+                        return [emp.id, isActive] as [number, boolean];
+                    } catch (error) {
+                        console.error('Error fetching shift status for', emp.id, error);
+                        return [emp.id, null] as [number, null];
+                    }
+                })
+            );
+            const map: Record<number, boolean | null> = {};
+            entries.forEach(([id, val]) => {
+                map[id] = val;
+            });
+            setShiftStatus(map);
+        } catch (error) {
+            console.error('Error fetching shift statuses:', error);
         }
     };
 
@@ -167,6 +199,9 @@ const EmployeesPage: React.FC = () => {
                                             Estado
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            Turno
+                                        </th>
+                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                             Fecha Creación
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -177,7 +212,7 @@ const EmployeesPage: React.FC = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredEmployees.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                            <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                                 <Users className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                                                 <p className="text-lg font-medium text-gray-900">No se encontraron empleados</p>
                                                 <p className="text-sm text-gray-500">Intenta ajustar los términos de búsqueda</p>
@@ -214,6 +249,22 @@ const EmployeesPage: React.FC = () => {
                                                             }`}
                                                     >
                                                         {employee.is_active ? 'Activo' : 'Inactivo'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span
+                                                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${shiftStatus[employee.id] === null
+                                                            ? 'bg-gray-50 text-gray-600 border-gray-200'
+                                                            : shiftStatus[employee.id]
+                                                                ? 'bg-green-50 text-green-700 border-green-100'
+                                                                : 'bg-red-50 text-red-700 border-red-100'
+                                                            }`}
+                                                    >
+                                                        {shiftStatus[employee.id] === null
+                                                            ? 'Sin datos'
+                                                            : shiftStatus[employee.id]
+                                                                ? 'Turno Activo'
+                                                                : 'Turno Inactivo'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppSelector } from '@/hooks/useRedux';
 import { Eye, EyeOff } from 'lucide-react';
+import { authService } from '@/services/authService';
 
 import LogoImage from './asset/Logo.png';
 
@@ -42,7 +43,33 @@ function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('[LOGIN] Starting login with:', username);
       await login({ username, password });
+      
+      // Get user directly from authService after successful login
+      const currentUser = authService.getCurrentUser();
+      console.log('[LOGIN] Current user after login:', currentUser);
+      
+      if (currentUser) {
+        console.log('[LOGIN] Navigating to', currentUser.role, 'dashboard');
+        switch (currentUser.role) {
+          case 'global_admin':
+            navigate('/admin/dashboard', { replace: true });
+            break;
+          case 'operational_admin':
+            navigate('/operational/dashboard', { replace: true });
+            break;
+          case 'washer':
+            navigate('/washer/dashboard', { replace: true });
+            break;
+          default:
+            console.warn('[LOGIN] Unknown role:', currentUser.role);
+            navigate('/login', { replace: true });
+        }
+      } else {
+        console.error('[LOGIN] getCurrentUser returned null after successful login');
+        setError('No se pudo obtener la información del usuario');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.response?.data?.detail || 'Error al iniciar sesión. Verifica tus credenciales.');

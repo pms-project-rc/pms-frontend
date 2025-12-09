@@ -31,37 +31,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
+        console.log('[AuthProvider] Initializing on mount');
         // Check if user is already logged in on mount
         const currentUser = authService.getCurrentUser();
-        setUser(currentUser);
+        if (currentUser) {
+            console.log('[AuthProvider] Found existing user:', currentUser);
+            setUser(currentUser);
+            // Sync with Redux
+            dispatch(setCredentials({
+                user: currentUser,
+                token: authService.getToken() || '',
+            }));
+        } else {
+            console.log('[AuthProvider] No existing user found');
+        }
         setIsLoading(false);
-    }, []);
+        console.log('[AuthProvider] Initialization complete');
+    }, [dispatch]);
 
     const login = async (credentials: LoginCredentials) => {
         try {
+            console.log('[AuthContext] Login called with:', credentials.username);
             const response = await authService.login(credentials);
+            console.log('[AuthContext] Login response:', response);
+            
             const currentUser = authService.getCurrentUser();
+            console.log('[AuthContext] getCurrentUser result:', currentUser);
+            
+            if (!currentUser) {
+                throw new Error('No se pudo obtener la información del usuario después del login');
+            }
+            
+            console.log('[AuthContext] Setting user and syncing Redux');
             setUser(currentUser);
 
             // Sync with Redux
-            if (currentUser) {
-                dispatch(setCredentials({
-                    user: currentUser,
-                    token: response.access_token,
-                }));
-            }
+            dispatch(setCredentials({
+                user: currentUser,
+                token: response.access_token,
+            }));
+            console.log('[AuthContext] Login complete, user and Redux updated');
         } catch (error) {
-            console.error('Login failed:', error);
+            console.error('[AuthContext] Login failed:', error);
             throw error;
         }
     };
 
     const logout = () => {
+        console.log('[AuthContext] Logging out');
         authService.logout();
         setUser(null);
 
         // Sync with Redux
         dispatch(logoutAction());
+        console.log('[AuthContext] Logout complete');
     };
 
     const value: AuthContextType = {

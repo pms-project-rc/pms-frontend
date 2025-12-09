@@ -62,10 +62,34 @@ class AuthService {
 
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
+            
+            // Extract role - MUST be present in token
+            const role = payload.role;
+            if (!role) {
+                console.warn('No role found in JWT payload');
+                return null;
+            }
+            
+            // Validate role is one of allowed values
+            if (!['global_admin', 'operational_admin', 'washer'].includes(role)) {
+                console.warn('Invalid role in token:', role);
+                return null;
+            }
+            
+            // Extract user ID - try multiple field names
+            const userId = payload.user_id || payload.sub;
+            if (!userId) {
+                console.warn('No user_id or sub found in JWT payload');
+                return null;
+            }
+            
+            // Extract username
+            const username = payload.username || payload.sub || 'unknown';
+            
             return {
-                id: payload.user_id || 0,
-                username: payload.sub,
-                role: payload.role || 'operational_admin',
+                id: userId,
+                username,
+                role: role as 'global_admin' | 'operational_admin' | 'washer',
                 active: true,
             };
         } catch (error) {
@@ -83,28 +107,3 @@ class AuthService {
 
 export const authService = new AuthService();
 
-// Axios interceptor to add auth token to requests
-axios.interceptors.request.use(
-    (config) => {
-        const token = authService.getToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Axios interceptor to handle 401 responses
-axios.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            authService.logout();
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
