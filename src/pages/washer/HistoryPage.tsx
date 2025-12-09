@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, ReactNode } from 'react'
-import { Clock, Activity, TrendingUp, Calendar } from 'lucide-react'
+import { Clock, Activity, TrendingUp, Calendar, EyeOff } from 'lucide-react'
 import { washerDashboardService } from '@/services/washerDashboardService'
 import { authService } from '@/services/authService'
 import { useShift } from '@/contexts/ShiftContext'
@@ -198,8 +198,17 @@ export default function WasherHistory() {
           </h1>
         </div>
 
-        {/* Contenido siempre visible, estilo cambia por turno */}
-        <>
+        {/* Contenido: solo visible si turno activo */}
+        {dark ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <NeuCard className="p-12 w-full text-center" dark={dark}>
+              <EyeOff className="w-20 h-20 mx-auto mb-6 text-gray-500" />
+              <p className="font-black text-xl text-gray-200 mb-2">Turno Inactivo</p>
+              <p className="text-sm text-gray-400">Activa tu turno para ver el historial</p>
+            </NeuCard>
+          </div>
+        ) : (
+          <>
           {/* Métricas */}
           <div className="mb-8 space-y-4">
             <MetricCard 
@@ -281,6 +290,7 @@ export default function WasherHistory() {
             )}
           </div>
         </>
+        )}
 
       </div>
     </div>

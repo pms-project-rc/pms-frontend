@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, ReactNode } from 'react'
-import { Clock, Activity, Plus, Bell } from 'lucide-react'
+import { Clock, Activity, Plus, Bell, EyeOff } from 'lucide-react'
 import { authService } from '@/services/authService'
 import { washerDashboardService } from '@/services/washerDashboardService'
 import { useShift } from '@/contexts/ShiftContext'
@@ -309,10 +309,11 @@ export default function WasherDashboard() {
           <ShiftToggle isActive={localShiftStatus} onChange={handleShiftChange} dark={localShiftStatus === 'inactivo'} />
         </div>
 
-        {/* Contenido: siempre visible */}
-        <>
-          {/* Sección Métricas */}
-          <div className="mb-8">
+        {/* Contenido: solo visible si turno activo */}
+        {localShiftStatus === 'activo' ? (
+          <>
+            {/* Sección Métricas */}
+            <div className="mb-8">
             <div className={`flex justify-between items-center mb-5 px-2 ${localShiftStatus === 'activo' ? 'text-[#023336]' : 'text-gray-200'}`}>
               <h2 className={`font-black text-lg ${localShiftStatus === 'activo' ? 'text-[#023336]' : 'text-white'}`}>Métricas</h2>
             </div>
@@ -385,6 +386,15 @@ export default function WasherDashboard() {
               </div>
           </div>
         </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20">
+            <NeuCard className="p-12 w-full text-center" dark={true}>
+              <EyeOff className="w-20 h-20 mx-auto mb-6 text-gray-500" />
+              <p className="font-black text-xl text-gray-200 mb-2">Turno Inactivo</p>
+              <p className="text-sm text-gray-400">Activa tu turno para ver tus servicios</p>
+            </NeuCard>
+          </div>
+        )}
 
       </div>
 
