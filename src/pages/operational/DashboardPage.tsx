@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   Droplets, Car, BarChart3, Clock, TrendingUp, DollarSign,
-  Users, Activity, AlertCircle, Calendar, Zap, Power
+  Users, Activity, AlertCircle, Calendar, Zap, Power, X
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { shiftService } from '@/services/shiftService';
+import { operationalDashboardService, OperationalSummary, Washer } from '@/services/operationalDashboardService';
 
 interface StatCard {
   title: string;
@@ -22,73 +23,113 @@ const OperationalDashboard: React.FC = () => {
   const [loadingShift, setLoadingShift] = useState<boolean>(false);
   const [initialCash, setInitialCash] = useState<number>(0);
   const [shiftMessage, setShiftMessage] = useState<string>('');
+  const [summary, setSummary] = useState<OperationalSummary | null>(null);
+  const [totalWashers, setTotalWashers] = useState<number>(0);
+  const [washers, setWashers] = useState<Washer[]>([]);
+  const [showWashersModal, setShowWashersModal] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Check for active shift on mount
-    const checkActiveShift = async () => {
+    const loadDashboardData = async () => {
       try {
+        setLoading(true);
+        
+        // Check for active shift
         const activeShift = await shiftService.getActiveShift();
         if (activeShift) {
           setShiftActive(true);
           setShiftMessage(`Turno activo desde ${new Date(activeShift.start_time).toLocaleTimeString('es-CO')}`);
         }
+
+        // Load operational summary
+        const summaryData = await operationalDashboardService.getSummaryStats();
+        setSummary(summaryData);
+
+        // Load total washers count (all washers with role 'washer')
+        const washersCount = await operationalDashboardService.getTotalWashersCount();
+        setTotalWashers(washersCount);
+        console.log('Total washers loaded:', washersCount);
+
+        // Load washers details
+        const washersData = await operationalDashboardService.getAllWashers();
+        setWashers(washersData);
+        console.log('Washers details loaded:', washersData);
+
+        if (summaryData) {
+          // Calculate total services today
+          const totalServicesToday = summaryData.parking.total_entries + summaryData.washing.total_services;
+          
+          // Calculate occupancy (assuming 20 spaces max)
+          const maxSpaces = 20;
+          const occupancyRate = summaryData.parking.active_vehicles > 0 
+            ? Math.round((summaryData.parking.active_vehicles / maxSpaces) * 100) 
+            : 0;
+
+          // Calculate average service income
+          const avgServiceIncome = totalServicesToday > 0 
+            ? summaryData.totals.total_income / totalServicesToday 
+            : 0;
+
+          // Format stats with real data
+          setStats([
+            {
+              title: 'Servicios Hoy',
+              value: totalServicesToday,
+              icon: <Droplets className="w-8 h-8" />,
+              color: 'text-blue-400',
+              bgColor: 'bg-blue-900',
+              trend: '+12%'
+            },
+            {
+              title: 'Parqueos Activos',
+              value: summaryData.parking.active_vehicles,
+              icon: <Car className="w-8 h-8" />,
+              color: 'text-yellow-400',
+              bgColor: 'bg-yellow-900',
+              trend: '+5%'
+            },
+            {
+              title: 'En Lavado',
+              value: summaryData.washing.active_services,
+              icon: <Zap className="w-8 h-8" />,
+              color: 'text-purple-400',
+              bgColor: 'bg-purple-900',
+              trend: '+3%'
+            },
+            {
+              title: 'Ingresos Hoy',
+              value: `$${(summaryData.totals.total_income / 1000).toFixed(0)}K`,
+              icon: <DollarSign className="w-8 h-8" />,
+              color: 'text-green-400',
+              bgColor: 'bg-green-900',
+              trend: '+8%'
+            },
+            {
+              title: 'Ocupación',
+              value: `${occupancyRate}%`,
+              icon: <Activity className="w-8 h-8" />,
+              color: 'text-red-400',
+              bgColor: 'bg-red-900',
+              trend: '+2%'
+            },
+            {
+              title: 'Completados',
+              value: totalServicesToday,
+              icon: <Calendar className="w-8 h-8" />,
+              color: 'text-green-400',
+              bgColor: 'bg-green-900',
+              trend: '+15%'
+            }
+          ]);
+        }
       } catch (err) {
-        console.error('Error checking active shift:', err);
+        console.error('Error loading dashboard data:', err);
+      } finally {
+        setLoading(false);
       }
     };
     
-    checkActiveShift();
-    
-    setStats([
-      {
-        title: 'Servicios Hoy',
-        value: 45,
-        icon: <Droplets className="w-8 h-8" />,
-        color: 'text-blue-400',
-        bgColor: 'bg-blue-900',
-        trend: '+12%'
-      },
-      {
-        title: 'Parqueos Activos',
-        value: 12,
-        icon: <Car className="w-8 h-8" />,
-        color: 'text-yellow-400',
-        bgColor: 'bg-yellow-900',
-        trend: '+5%'
-      },
-      {
-        title: 'En Lavado',
-        value: 8,
-        icon: <Zap className="w-8 h-8" />,
-        color: 'text-purple-400',
-        bgColor: 'bg-purple-900',
-        trend: '+3%'
-      },
-      {
-        title: 'Ingresos Hoy',
-        value: '$2,850K',
-        icon: <DollarSign className="w-8 h-8" />,
-        color: 'text-green-400',
-        bgColor: 'bg-green-900',
-        trend: '+8%'
-      },
-      {
-        title: 'Ocupación',
-        value: '75%',
-        icon: <Activity className="w-8 h-8" />,
-        color: 'text-red-400',
-        bgColor: 'bg-red-900',
-        trend: '+2%'
-      },
-      {
-        title: 'Completados',
-        value: 42,
-        icon: <Calendar className="w-8 h-8" />,
-        color: 'text-green-400',
-        bgColor: 'bg-green-900',
-        trend: '+15%'
-      }
-    ]);
+    loadDashboardData();
   }, []);
 
   const toggleShift = () => {
@@ -135,7 +176,7 @@ const OperationalDashboard: React.FC = () => {
       <section className="mb-10">
         <div className="rounded-2xl p-10 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 shadow-2xl">
           <h2 className="text-4xl font-bold mb-3 flex items-center gap-3 text-white">
-            <span role="img" aria-label="wave">👋</span> ¡Bienvenido!
+            <span role="img" aria-label="wave">👋</span> ¡Bienvenido{user?.full_name ? `, ${user.full_name}` : user?.username ? `, ${user.username}` : ''}!
           </h2>
           <p className="text-blue-100 text-lg font-light">Panel de control operacional</p>
         </div>
@@ -213,27 +254,36 @@ const OperationalDashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {stats.map((stat, idx) => (
-          <div
-            key={idx}
-            className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700 shadow-xl hover:border-slate-600 hover:shadow-2xl transition-all duration-300"
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div className={`${stat.bgColor} p-4 rounded-xl`}>
-                <div className={stat.color}>{stat.icon}</div>
-              </div>
-              {stat.trend && (
-                <span className="text-green-400 text-sm font-bold bg-green-900/40 px-3 py-1 rounded-full border border-green-800/50">
-                  {stat.trend}
-                </span>
-              )}
-            </div>
-            <p className="text-gray-400 text-sm font-medium mb-2">{stat.title}</p>
-            <p className="text-3xl font-bold text-white">{stat.value}</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-full border-4 border-blue-600 border-t-transparent animate-spin mx-auto mb-4" />
+            <p className="text-gray-400 font-semibold">Cargando estadísticas...</p>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {stats.map((stat, idx) => (
+            <div
+              key={idx}
+              className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700 shadow-xl hover:border-slate-600 hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-start justify-between mb-5">
+                <div className={`${stat.bgColor} p-4 rounded-xl`}>
+                  <div className={stat.color}>{stat.icon}</div>
+                </div>
+                {stat.trend && (
+                  <span className="text-green-400 text-sm font-bold bg-green-900/40 px-3 py-1 rounded-full border border-green-800/50">
+                    {stat.trend}
+                  </span>
+                )}
+              </div>
+              <p className="text-gray-400 text-sm font-medium mb-2">{stat.title}</p>
+              <p className="text-3xl font-bold text-white">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main Actions */}
       <div className="mb-10">
@@ -255,10 +305,10 @@ const OperationalDashboard: React.FC = () => {
             </div>
             <div className="space-y-2 mb-6 bg-slate-900/50 rounded-lg p-4">
               <p className="text-sm text-gray-300">
-                <span className="font-bold text-amber-300">12 vehículos</span> activos
+                <span className="font-bold text-amber-300">{summary?.parking.active_vehicles || 0} vehículos</span> activos
               </p>
               <p className="text-sm text-gray-300">
-                Ocupación: <span className="font-bold text-amber-300">75%</span>
+                Ingresos: <span className="font-bold text-amber-300">${((summary?.parking.income || 0) / 1000).toFixed(0)}K</span>
               </p>
             </div>
             <button className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all duration-200">
@@ -282,10 +332,10 @@ const OperationalDashboard: React.FC = () => {
             </div>
             <div className="space-y-2 mb-6 bg-slate-900/50 rounded-lg p-4">
               <p className="text-sm text-gray-300">
-                <span className="font-bold text-cyan-300">8 servicios</span> en proceso
+                <span className="font-bold text-cyan-300">{summary?.washing.active_services || 0} servicios</span> en proceso
               </p>
               <p className="text-sm text-gray-300">
-                Ingresos: <span className="font-bold text-cyan-300">$1,850K</span>
+                Ingresos: <span className="font-bold text-cyan-300">${((summary?.washing.income || 0) / 1000).toFixed(0)}K</span>
               </p>
             </div>
             <button className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all duration-200">
@@ -309,10 +359,10 @@ const OperationalDashboard: React.FC = () => {
             </div>
             <div className="space-y-2 mb-6 bg-slate-900/50 rounded-lg p-4">
               <p className="text-sm text-gray-300">
-                <span className="font-bold text-emerald-300">42 completados</span> hoy
+                <span className="font-bold text-emerald-300">{((summary?.parking.total_entries || 0) + (summary?.washing.total_services || 0))} completados</span> hoy
               </p>
               <p className="text-sm text-gray-300">
-                Ingresos: <span className="font-bold text-emerald-300">$2,850K</span>
+                Ingresos: <span className="font-bold text-emerald-300">${((summary?.totals.total_income || 0) / 1000).toFixed(0)}K</span>
               </p>
             </div>
             <button className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all duration-200">
@@ -324,33 +374,78 @@ const OperationalDashboard: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700">
-          <div className="flex items-center gap-3 mb-5">
-            <Clock className="w-6 h-6 text-blue-400" />
-            <h3 className="font-bold text-white text-lg">Parqueo Gratuito</h3>
-          </div>
-          <p className="text-3xl font-bold text-blue-300 mb-2">2 horas</p>
-          <p className="text-sm text-gray-400">Tiempo sin cobro</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700">
+        <div 
+          onClick={() => setShowWashersModal(true)}
+          className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700 cursor-pointer hover:border-purple-500 hover:shadow-xl hover:shadow-purple-900/20 transition-all duration-300"
+        >
           <div className="flex items-center gap-3 mb-5">
             <Users className="w-6 h-6 text-purple-400" />
             <h3 className="font-bold text-white text-lg">Lavadores</h3>
           </div>
-          <p className="text-3xl font-bold text-purple-300 mb-2">8</p>
-          <p className="text-sm text-gray-400">Disponibles ahora</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-7 border border-slate-700">
-          <div className="flex items-center gap-3 mb-5">
-            <TrendingUp className="w-6 h-6 text-green-400" />
-            <h3 className="font-bold text-white text-lg">Promedio/Servicio</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-300 mb-2">$67.8K</p>
-          <p className="text-sm text-gray-400">Ingreso promedio</p>
+          <p className="text-3xl font-bold text-purple-300 mb-2">{totalWashers}</p>
+          <p className="text-sm text-gray-400">Click para ver detalles</p>
         </div>
       </div>
+
+      {/* Washers Modal */}
+      {showWashersModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full border border-slate-700 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Users className="w-7 h-7 text-purple-400" />
+                Lavadores Registrados
+              </h2>
+              <button
+                onClick={() => setShowWashersModal(false)}
+                className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-gray-300 hover:text-white transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {washers.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 font-semibold">No hay lavadores registrados</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {washers.map((washer, idx) => (
+                  <div
+                    key={washer.id}
+                    className="bg-gradient-to-r from-slate-700/50 to-slate-800/50 rounded-xl p-5 border border-slate-600 hover:border-purple-500/50 transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-purple-600/30 border-2 border-purple-500/50 flex items-center justify-center font-bold text-purple-300">
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <p className="font-bold text-white text-lg">{washer.full_name || washer.username}</p>
+                            <p className="text-sm text-gray-400">@{washer.username}</p>
+                          </div>
+                        </div>
+                        {washer.email && (
+                          <p className="text-sm text-gray-400 ml-13">📧 {washer.email}</p>
+                        )}
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        washer.is_active 
+                          ? 'bg-green-600/30 text-green-300 border border-green-700/50'
+                          : 'bg-red-600/30 text-red-300 border border-red-700/50'
+                      }`}>
+                        {washer.is_active ? '✓ Activo' : '✗ Inactivo'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Today's Schedule */}
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-10 border border-slate-700 shadow-xl">

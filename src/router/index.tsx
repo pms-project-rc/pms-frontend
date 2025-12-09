@@ -135,14 +135,6 @@ function Router() {
         <Route path="history" element={<WasherHistory />} />
       </Route>
 
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-
-      </Route>
-
-
-
-
       {/* Error Routes */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 

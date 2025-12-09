@@ -14,9 +14,9 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
         return <Navigate to="/login" replace />;
     }
 
-    // If we have a token but no user, it means decode failed - redirect to login
+    // If hay token pero aún no tenemos user (ej: decode lento), dejamos pasar para evitar rebote al login
     if (token && !user) {
-        return <Navigate to="/login" replace />;
+        return <>{children}</>;
     }
 
     // If we have a user but they don't have the right role, redirect to unauthorized

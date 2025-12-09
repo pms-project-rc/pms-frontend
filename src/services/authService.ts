@@ -15,8 +15,11 @@ export interface AuthResponse {
 export interface User {
     id: number;
     username: string;
+    full_name?: string;
+    email?: string;
     role: 'global_admin' | 'operational_admin' | 'washer';
     active: boolean;
+    commission_percentage?: number;
 }
 
 class AuthService {
@@ -84,13 +87,23 @@ class AuthService {
             }
             
             // Extract username
-            const username = payload.username || payload.sub || 'unknown';
+            const username = payload.username || payload.email || payload.sub || 'unknown';
+            
+            // Extract full_name and email
+            const full_name = payload.full_name || payload.name;
+            const email = payload.email;
+            
+            // Extract commission percentage (only for washers)
+            const commission_percentage = payload.commission_percentage;
             
             return {
                 id: userId,
                 username,
+                full_name,
+                email,
                 role: role as 'global_admin' | 'operational_admin' | 'washer',
                 active: true,
+                commission_percentage
             };
         } catch (error) {
             console.error('Error decoding token:', error);
