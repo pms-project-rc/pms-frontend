@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { FileText, Download, Calendar, FileSpreadsheet, File, Loader, FileType } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Download, Calendar, FileSpreadsheet, File, Loader, FileType, Eye } from 'lucide-react';
 import { reportService } from '@/services/reportService';
+import { washerService } from '@/services/washerService';
 
-type ReportType = 'income_expenses' | 'washing' | 'parking' | 'payroll' | 'comprehensive';
+type ReportType = 'income_expenses' | 'washing' | 'parking' | 'payroll';
 type ExportFormat = 'excel' | 'pdf' | 'csv';
 
 interface ReportOption {
@@ -18,6 +19,60 @@ const ReportsExport: React.FC = () => {
     const [selectedReport, setSelectedReport] = useState<ReportType>('parking');
     const [exportFormat, setExportFormat] = useState<ExportFormat>('excel');
     const [loading, setLoading] = useState(false);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewData, setPreviewData] = useState<any[] | null>(null);
+    
+    // Payroll specific state
+    const [payrollViewType, setPayrollViewType] = useState<'summary' | 'detail'>('summary');
+    const [selectedWasherId, setSelectedWasherId] = useState<number | null>(null);
+    const [washers, setWashers] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (selectedReport === 'payroll') {
+            loadWashers();
+        }
+    }, [selectedReport]);
+
+    useEffect(() => {
+        const fetchPreview = async () => {
+            if (!startDate || !endDate) {
+                setPreviewData(null);
+                return;
+            }
+            
+            if (selectedReport === 'payroll' && payrollViewType === 'detail' && !selectedWasherId) {
+                setPreviewData(null);
+                return;
+            }
+
+            setPreviewLoading(true);
+            try {
+                const data = await reportService.getPreviewData(
+                    selectedReport,
+                    startDate,
+                    endDate,
+                    selectedReport === 'payroll' ? { viewType: payrollViewType, washerId: selectedWasherId || undefined } : undefined
+                );
+                setPreviewData(data);
+            } catch (error) {
+                console.error('Error fetching preview:', error);
+            } finally {
+                setPreviewLoading(false);
+            }
+        };
+
+        const timeoutId = setTimeout(fetchPreview, 500);
+        return () => clearTimeout(timeoutId);
+    }, [startDate, endDate, selectedReport, payrollViewType, selectedWasherId]);
+
+    const loadWashers = async () => {
+        try {
+            const data = await washerService.getAllWashers();
+            setWashers(data);
+        } catch (error) {
+            console.error('Error loading washers:', error);
+        }
+    };
 
     const reportOptions: ReportOption[] = [
         {
@@ -25,12 +80,6 @@ const ReportsExport: React.FC = () => {
             name: 'Registro de Parqueadero',
             description: 'Historial de vehículos en parqueadero (Disponible)',
             icon: <FileText className="w-6 h-6 text-yellow-600" />
-        },
-        {
-            id: 'comprehensive',
-            name: 'Reporte Completo',
-            description: 'Incluye ingresos, gastos, servicios de lavado y parqueadero',
-            icon: <FileText className="w-6 h-6 text-purple-600" />
         },
         {
             id: 'income_expenses',
@@ -62,9 +111,23 @@ const ReportsExport: React.FC = () => {
         try {
             if (selectedReport === 'parking') {
                 await reportService.exportParkingHistory(startDate, endDate, exportFormat);
+            } else if (selectedReport === 'income_expenses') {
+                await reportService.exportRevenue(startDate, endDate, exportFormat);
+            } else if (selectedReport === 'washing') {
+                await reportService.exportWashingHistory(startDate, endDate, exportFormat);
+            } else if (selectedReport === 'payroll') {
+                if (payrollViewType === 'summary') {
+                    await reportService.exportPayrollSummary(startDate, endDate, exportFormat);
+                } else {
+                    if (!selectedWasherId) {
+                        alert('Por favor selecciona un lavador');
+                        return;
+                    }
+                    await reportService.exportPayrollDetail(selectedWasherId, startDate, endDate, exportFormat);
+                }
             } else {
                 // Placeholder for other reports not yet implemented in backend
-                alert('Este reporte estará disponible próximamente. Por ahora prueba el "Registro de Parqueadero".');
+                alert('Este reporte estará disponible próximamente. Por ahora prueba el "Registro de Parqueadero", "Ingresos y Gastos" o "Servicios de Lavado".');
             }
         } catch (error) {
             console.error('Error exporting report:', error);
@@ -196,6 +259,68 @@ const ReportsExport: React.FC = () => {
                             ))}
                         </div>
                     </div>
+
+                    {/* Payroll Specific Options */}
+                    {selectedReport === 'payroll' && (
+                        <div className="bg-white rounded-xl shadow-lg p-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <FileText className="w-5 h-5 text-gray-600" />
+                                <h2 className="text-xl font-bold text-gray-900">Opciones de Nómina</h2>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Tipo de Reporte
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="payrollViewType"
+                                                value="summary"
+                                                checked={payrollViewType === 'summary'}
+                                                onChange={() => setPayrollViewType('summary')}
+                                                className="text-yellow-600 focus:ring-yellow-500"
+                                            />
+                                            <span>Resumen General (Todos)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="payrollViewType"
+                                                value="detail"
+                                                checked={payrollViewType === 'detail'}
+                                                onChange={() => setPayrollViewType('detail')}
+                                                className="text-yellow-600 focus:ring-yellow-500"
+                                            />
+                                            <span>Detallado por Lavador</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {payrollViewType === 'detail' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Seleccionar Lavador
+                                        </label>
+                                        <select
+                                            value={selectedWasherId || ''}
+                                            onChange={(e) => setSelectedWasherId(Number(e.target.value))}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                                        >
+                                            <option value="">Seleccione un lavador...</option>
+                                            {washers.map((washer) => (
+                                                <option key={washer.id} value={washer.id}>
+                                                    {washer.full_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Panel - Export Options */}
@@ -311,6 +436,56 @@ const ReportsExport: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Preview Section */}
+            {(previewData || previewLoading) && (
+                <div className="mt-8 bg-white rounded-xl shadow-lg p-6 overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-gray-900">Vista Previa del Reporte</h2>
+                        {previewData && <span className="text-sm text-gray-500">{previewData.length} registros encontrados</span>}
+                    </div>
+                    
+                    {previewLoading ? (
+                        <div className="flex justify-center py-12">
+                            <Loader className="w-8 h-8 animate-spin text-yellow-500" />
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        {previewData && previewData.length > 0 && Object.keys(previewData[0]).map((key) => (
+                                            <th
+                                                key={key}
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                                            >
+                                                {key.replace(/_/g, ' ')}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {previewData && previewData.map((row, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            {Object.values(row).map((value: any, i) => (
+                                                <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {previewData && previewData.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    No se encontraron datos para el rango seleccionado.
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

@@ -13,6 +13,7 @@ interface ParkingEntry {
   helmets: number;
   helmetCost: number;
   operator: string;
+  totalCost?: number;
 }
 
 const ParkingPage: React.FC = () => {
@@ -37,9 +38,9 @@ const ParkingPage: React.FC = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [config, setConfig] = useState({
     helmetCostPerUnit: 5000,
-    freeParking: 2, // horas gratis
-    parkingRateCarPerMinute: 50, // $50 por minuto
-    parkingRateMotorcyclePerMinute: 25, // $25 por minuto
+    freeParking: 0, // 0 horas gratis para coincidir con backend
+    parkingRateCarPerMinute: 2000 / 60, // Base 2000/hora
+    parkingRateMotorcyclePerMinute: 1000 / 60, // Base 1000/hora
     maxCapacity: 30, // espacios máximos
   });
 
@@ -106,7 +107,8 @@ const ParkingPage: React.FC = () => {
         entryTime: new Date(p.entry_time),
         helmets: p.helmet_count || 0,
         helmetCost: (p.helmet_count || 0) * helmetCostPerUnit,
-        operator: p.owner_name || 'Sistema'
+        operator: p.owner_name || 'Sistema',
+        totalCost: p.total_cost || 0
       }));
 
       setCompletedEntries(mapped);
@@ -117,18 +119,16 @@ const ParkingPage: React.FC = () => {
 
   const calculateParkingCharge = (entry: ParkingEntry) => {
     const nowTime = new Date();
-    const minutesParked =
-      (nowTime.getTime() - entry.entryTime.getTime()) /
-      (1000 * 60);
+    const durationMs = nowTime.getTime() - entry.entryTime.getTime();
+    // Backend logic: Ceiling to nearest hour, minimum 1 hour
+    const hours = Math.max(1, Math.ceil(durationMs / (1000 * 60 * 60)));
 
-    const freeMinutes = config.freeParking * 60;
-    const chargeableMinutes = Math.max(0, minutesParked - freeMinutes);
-    const ratePerMinute =
-      entry.vehicleType.toLowerCase().includes('moto') || entry.vehicleType === 'motorcycle'
-        ? config.parkingRateMotorcyclePerMinute
-        : config.parkingRateCarPerMinute;
+    // Tarifas fijas por hora (coincidiendo con backend)
+    const hourlyRate = entry.vehicleType.toLowerCase().includes('moto') || entry.vehicleType === 'motorcycle'
+      ? 1000
+      : 2000;
 
-    return Math.ceil(chargeableMinutes) * ratePerMinute + entry.helmetCost;
+    return (hours * hourlyRate) + (entry.helmetCost || 0);
   };
 
   // 🟢 Registrar entrada real al backend
@@ -228,7 +228,10 @@ const ParkingPage: React.FC = () => {
             <DollarSign className="w-6 h-6 text-green-400" />
           </div>
           <p className="text-3xl font-bold text-green-300">
-            {formatCurrency(parkingEntries.reduce((sum, p) => sum + calculateParkingCharge(p), 0))}
+            {formatCurrency(
+              completedEntries.reduce((sum, p) => sum + (p.totalCost || 0), 0) +
+              parkingEntries.reduce((sum, p) => sum + calculateParkingCharge(p), 0)
+            )}
           </p>
         </div>
 
@@ -769,7 +772,7 @@ const ParkingPage: React.FC = () => {
                         </td>
                         <td className="px-8 py-5 text-center text-gray-300">{entry.helmets}</td>
                         <td className="px-8 py-5 text-right font-bold text-green-300">
-                          {formatCurrency(calculateParkingCharge(entry))}
+                          {formatCurrency(entry.totalCost || 0)}
                         </td>
                         <td className="px-8 py-5 text-center text-gray-400">{entry.operator}</td>
                       </tr>

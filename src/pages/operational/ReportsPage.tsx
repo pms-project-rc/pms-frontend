@@ -33,62 +33,18 @@ const ReportsPage: React.FC = () => {
   // 📌 Cargar datos al iniciar y cuando cambia el rango
   useEffect(() => {
     loadReport();
-  }, []);
+  }, [dateRange]); // Reload when date changes
 
   const loadReport = async () => {
     try {
       setLoading(true);
       setFeedback(null);
 
-      // Cargar TODOS los registros de parqueo (activos y completados)
-      let parkingData: ParkingRecord[] = [];
-      try {
-        parkingData = await parkingService.getAllRecords();
-      } catch (err) {
-        console.warn('getAllRecords failed, trying getActiveVehicles:', err);
-        // Fallback: si no existe el endpoint, usar solo activos
-        parkingData = await parkingService.getActiveVehicles();
-      }
-
-      // Cargar TODOS los registros de lavado (activos y completados)
-      let washingData: WashingService[] = [];
-      try {
-        washingData = await washingService.getAllServices();
-      } catch (err) {
-        console.warn('getAllServices failed, trying getActiveServices:', err);
-        // Fallback: si no existe el endpoint, usar solo activos
-        washingData = await washingService.getActiveServices();
-      }
-
-      // Filtrar por rango de horas
-      const filteredParking = filterByTimeRange(parkingData);
-      const filteredWashing = filterByTimeRange(washingData);
-
-      // Calcular totales
-      const totalParkings = filteredParking.length;
-      const totalWashing = filteredWashing.length;
-      const parkingRevenue = filteredParking.reduce((acc: number, p: ParkingRecord) => acc + (p.total_cost || 0), 0);
-      const washingRevenue = filteredWashing.reduce((acc: number, w: WashingService) => acc + (w.price || 0), 0);
-      const totalRevenue = parkingRevenue + washingRevenue;
-      const averageTicket = (totalParkings + totalWashing) > 0 ? totalRevenue / (totalParkings + totalWashing) : 0;
-
-      // Generar breakdown por horas
-      const hourlyData = generateHourlyBreakdown(filteredParking, filteredWashing);
-
-      const report: DailyReport = {
-        date: new Date().toISOString(),
-        totalParkings,
-        totalWashing,
-        totalRevenue,
-        parkingRevenue,
-        washingRevenue,
-        averageTicket,
-        occupancyPercentage: totalParkings > 0 ? (totalParkings / 30) * 100 : 0,
-        parkingRecords: filteredParking,
-        washingRecords: filteredWashing,
-        hourlyBreakdown: hourlyData
-      };
-
+      // Use the new backend endpoint for daily reports
+      // We use the endDate as the target date for the daily report for now
+      // TODO: Support range reports properly in backend
+      const report = await reportsService.getDailyReport(dateRange.endDate);
+      
       setReportData(report);
       setFeedback({ type: 'success', message: 'Reporte cargado correctamente' });
     } catch (err: any) {

@@ -51,7 +51,19 @@ export interface DashboardMetrics {
     }[];
 }
 
+export interface DashboardStats {
+    active_vehicles: number;
+    total_washes: number;
+    today_income: number;
+    today_expenses: number;
+}
+
 class DashboardService {
+    async getStats(): Promise<DashboardStats> {
+        const response = await axios.get<DashboardStats>(`${API_URL}/dashboard/stats`);
+        return response.data;
+    }
+
     async getMetrics(startDate?: string, endDate?: string): Promise<DashboardMetrics> {
         const params: any = {};
         if (startDate) params.start_date = startDate;

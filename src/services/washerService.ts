@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 export interface Washer {
   id: number;
   name: string;
+  full_name: string;
   phone?: string;
   email?: string;
   is_active: boolean;
@@ -12,7 +13,7 @@ export interface Washer {
 
 interface WasherResponse {
   id: number;
-  name: string;
+  full_name: string;
   phone?: string;
   email?: string;
   is_active: boolean;
@@ -37,11 +38,16 @@ class WasherServiceAPI {
     
     return response.data.map(item => ({
       id: item.id,
-      name: item.name,
+      name: item.full_name,
+      full_name: item.full_name,
       phone: item.phone,
       email: item.email,
       is_active: item.is_active
     }));
+  }
+
+  async getAllWashers(): Promise<Washer[]> {
+    return this.getWashers();
   }
 }
 

@@ -30,39 +30,12 @@ function DashboardPage() {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            // Get today's date range
-            const today = new Date();
-            const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-            // Fetch data in parallel
-            const [vehicles, washes, expenses] = await Promise.all([
-                vehicleService.getActiveVehicles().catch(() => []),
-                washingService.getActiveServices().catch(() => []),
-                expenseService.getExpenses().catch(() => [])
-            ]);
-
-            // Calculate today's expenses
-            const todayExpenses = expenses
-                .filter(exp => {
-                    const expDate = new Date(exp.expense_date);
-                    return expDate >= startOfDay && expDate <= endOfDay;
-                })
-                .reduce((sum, exp) => sum + exp.amount, 0);
-
-            // Calculate today's income from completed washes
-            const todayIncome = washes
-                .filter(wash => {
-                    const washDate = new Date(wash.created_at);
-                    return wash.status === 'completed' && washDate >= startOfDay && washDate <= endOfDay;
-                })
-                .reduce((sum, wash) => sum + (wash.price || 0), 0);
-
+            const data = await dashboardService.getStats();
             setStats({
-                activeVehicles: vehicles.length,
-                totalWashes: washes.length,
-                todayIncome: todayIncome,
-                todayExpenses: todayExpenses
+                activeVehicles: data.active_vehicles,
+                totalWashes: data.total_washes,
+                todayIncome: data.today_income,
+                todayExpenses: data.today_expenses
             });
         } catch (error) {
             console.error('Error fetching dashboard data:', error);

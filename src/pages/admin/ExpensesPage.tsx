@@ -21,7 +21,8 @@ const ExpensesPage: React.FC = () => {
         { id: 'INSUMOS', name: 'Insumos', color: 'bg-blue-500' },
         { id: 'SERVICIOS', name: 'Servicios', color: 'bg-green-500' },
         { id: 'NOMINA', name: 'Nómina', color: 'bg-purple-500' },
-        { id: 'VARIOS', name: 'Varios', color: 'bg-orange-500' }
+        { id: 'VARIOS', name: 'Varios', color: 'bg-orange-500' },
+        { id: 'Test', name: 'Test', color: 'bg-gray-400' } // Added to handle the 'Test' category mentioned by user
     ];
 
     const fetchExpenses = async () => {
@@ -76,7 +77,7 @@ const ExpensesPage: React.FC = () => {
 
     const filteredExpenses = selectedCategory === 'all'
         ? expenses
-        : expenses.filter(exp => exp.expense_type === selectedCategory);
+        : expenses.filter(exp => exp.expense_type.toUpperCase() === selectedCategory.toUpperCase());
 
     const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
